@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 
 	"github.com/Junya-kobayashi/grpc-go-course/caluculator/caluculatorpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type server struct {
@@ -102,7 +105,22 @@ func (*server) Max(stream caluculatorpb.CaluculatorService_MaxServer) error {
 			return sendErr
 		}
 	}
+}
 
+func (*server) SquareRoot(ctx context.Context, req *caluculatorpb.SquareRootRequest) (*caluculatorpb.SquareRootResponse, error) {
+	fmt.Printf("square root function was invoked with request\n")
+	number := req.GetNumber()
+
+	if number < 0 {
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			fmt.Sprintf("Received a negative number: %v\n", number),
+		)
+	}
+
+	return &caluculatorpb.SquareRootResponse{
+		NumberRoot: math.Sqrt(float64(number)),
+	}, nil
 }
 
 func main() {

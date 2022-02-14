@@ -9,6 +9,8 @@ import (
 
 	"github.com/Junya-kobayashi/grpc-go-course/caluculator/caluculatorpb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func main() {
@@ -25,7 +27,8 @@ func main() {
 	//doSum(c)
 	//doFactor(c)
 	// doAverage(c)
-	doMaximum(c)
+	// doMaximum(c)
+	doErrorUnary(c)
 }
 
 func doSum(c caluculatorpb.CaluculatorServiceClient) {
@@ -147,4 +150,32 @@ func doMaximum(c caluculatorpb.CaluculatorServiceClient) {
 	}()
 
 	<-waitc
+}
+
+func doErrorUnary(c caluculatorpb.CaluculatorServiceClient) {
+	fmt.Println("Starting to do a SquareRoot Unary RPC...")
+	// correct call
+	doErrorCall(c, 10)
+	doErrorCall(c, -2)
+}
+
+func doErrorCall(c caluculatorpb.CaluculatorServiceClient, number int32) {
+	res, err := c.SquareRoot(context.Background(), &caluculatorpb.SquareRootRequest{Number: number})
+
+	if err != nil {
+		respErr, ok := status.FromError(err)
+		if ok {
+			// actual error from gRPC (user error)
+			fmt.Println(respErr.Message())
+			fmt.Println(respErr.Code())
+			if respErr.Code() == codes.InvalidArgument {
+				fmt.Println("We probably sent a negative number!")
+			}
+		} else {
+			log.Fatalf("Big error calling SquareRoot: %v", err)
+		}
+	}
+
+	fmt.Printf("Result of square root of %v: %v\n", number, res.GetNumberRoot())
+	// error call
 }
